@@ -8,14 +8,13 @@ st.set_page_config(
     page_icon="🎈",
     layout="wide"
 )
-
 # =========================
 # LOAD YOLO MODEL (SAFE)
 # =========================
 @st.cache_resource
 def load_yolo_seg():
     from ultralytics import YOLO
-    return YOLO(r"models\3cls\direct\best_yolo_direct_3cls.pt")
+    return YOLO("models/3cls/direct/best_yolo_direct_3cls.pt")
 
 # =========================
 # CENTER LAYOUT
