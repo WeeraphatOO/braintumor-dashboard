@@ -1,7 +1,2 @@
-ffmpeg
-gifsicle
-build-essential
-python3-dev
-gdal-bin
-libgdal-dev
-libodbc2
+libgl1
+libglib2.0-0
