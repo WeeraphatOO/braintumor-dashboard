@@ -1,5 +1,5 @@
 import streamlit as st
-
+from PIL import Image
 # =========================
 # PAGE CONFIG
 # =========================
@@ -10,6 +10,14 @@ st.set_page_config(
 )
 
 # =========================
+# LOAD YOLO MODEL (SAFE)
+# =========================
+@st.cache_resource
+def load_yolo_seg():
+    from ultralytics import YOLO
+    return YOLO(r"models\3cls\direct\best_yolo_direct_3cls.pt")
+
+# =========================
 # CENTER LAYOUT
 # =========================
 left, center, right = st.columns([1, 2, 1])
@@ -17,8 +25,8 @@ left, center, right = st.columns([1, 2, 1])
 with center:
     st.title("Input Your MRI Scan!")
 
-    st.write(
-        "You can upload a brain MRI scan and select a segmentation model "
+    st.markdown(
+        "You can upload a brain MRI scan and select a model "
         "to perform tumor detection and segmentation."
     )
 
@@ -27,10 +35,9 @@ with center:
     st.write("3. YOLO Segmentation (Real-time Instance Segmentation Model)")
 
     st.divider()
-
     st.subheader("Select Your Model")
 
-    model = st.selectbox(
+    model_choice = st.selectbox(
         "Choose Your Algorithm",
         [
             "Choose option",
@@ -40,20 +47,54 @@ with center:
         ]
     )
 
-    # =========================
-    # FILE UPLOADER
-    # =========================
-    uploaded_file = st.file_uploader(
-        "Upload MRI Scan",
-        type=["jpg", "jpeg", "png"]
-    )
+    if model_choice != "Choose option":
 
-    if uploaded_file is not None:
-        st.image(uploaded_file, width = 'stretch')
-        st.success("MRI scan uploaded successfully")
+        uploaded_file = st.file_uploader(
+            "Upload MRI Scan",
+            type=["jpg", "jpeg", "png"]
+        )
 
-        if model != "Choose option":
-            st.info(f"Selected model: {model}")
-            st.info("Prediction pipeline will be executed here")
-        else:
-            st.warning("Please select a model before prediction")
+        if uploaded_file is not None:
+            image = Image.open(uploaded_file).convert("RGB")
+            st.image(image, width="stretch")
+            st.success("MRI scan uploaded successfully")
+
+            # =========================
+            # YOLO SEGMENTATION
+            # =========================
+            if model_choice == "YOLO Segmentation":
+                        model = load_yolo_seg()
+
+                        results = model(image, conf=0.25, verbose=False)
+                        result = results[0]
+
+                        annotated = result.plot()
+
+                        st.subheader("Segmentation Result")
+                        st.image(annotated, width="stretch")
+
+                        st.subheader("Detected Objects")
+                        boxes = result.boxes.cpu().numpy()
+
+                        if len(boxes) > 0:
+                            cols = st.columns(len(boxes))
+                            for i, box in enumerate(boxes):
+                                x1, y1, x2, y2 = box.xyxy[0].astype(int)
+                                crop = img_np[y1:y2, x1:x2]
+
+                                cls_id = int(box.cls[0])
+                                conf = float(box.conf[0])
+                                class_name = result.names[cls_id]
+
+                                with cols[i]:
+                                    st.write(f"{class_name} ({conf:.2f})")
+                                    st.image(crop)
+                        else:
+                            st.warning("No objects detected")
+
+            else:
+                st.info(f"Selected model: {model_choice}")
+                st.info("This pipeline is not implemented yet")
+
+    else:
+        st.info("Please select a model to continue")

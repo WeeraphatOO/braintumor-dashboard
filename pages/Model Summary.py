@@ -11,14 +11,14 @@ left, center, right = st.columns([1, 2, 1])
 with center:
     st.title("Welcome!")
 
-    st.write(
+    st.markdown(
         "This is Brain Tumor Detection and Segmentation Senior Project "
         "Having 3 methods"
     )
 
-    st.write("1. U-Net (Semantic Segmentation Model)")
-    st.write("2. Hybrid Model (YOLO detection with U-Net Segmentation)")
-    st.write("3. YOLO Segmentation (Real-time Instance Segmentation Model)")
+    st.markdown("1. U-Net (Semantic Segmentation Model)")
+    st.markdown("2. Hybrid Model (YOLO detection with U-Net Segmentation)")
+    st.markdown("3. YOLO Segmentation (Real-time Instance Segmentation Model)")
 
     tab_accuracy, tab_dataset = st.tabs(["Accuracy", "Dataset"])
 
