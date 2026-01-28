@@ -39,30 +39,6 @@ DIRECT_IOU  = [0.6264, 0.75824, 0.85659]
 
 CLASS_NAMES = ["glioma", "pituitary", "meningioma", "no tumor"]
 
-# =========================
-# HELPER FUNCTIONS
-# =========================
-def plot_confusion_matrix(cm, title):
-    fig, ax = plt.subplots()
-    im = ax.imshow(cm)
-    ax.set_title(title)
-    ax.set_xlabel("Predicted")
-    ax.set_ylabel("True")
-
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            ax.text(j, i, cm[i, j], ha="center", va="center")
-
-    st.pyplot(fig)
-
-def plot_loss(df, title):
-    fig, ax = plt.subplots()
-    ax.plot(df["epoch"], df["loss"])
-    ax.set_title(title)
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel("Loss")
-    st.pyplot(fig)
-
 with center:
     st.title("Welcome!")
 
@@ -133,7 +109,7 @@ with center:
                 plt.plot(df["epoch"], df["val_total_loss"], label="Val Loss")
                 plt.xlabel("Epoch")
                 plt.ylabel("Total Loss")
-                plt.title("Direct YOLO Total Loss")
+                plt.title("Direct Training YOLO Total Loss")
                 plt.legend()
                 st.pyplot(plt.gcf())
                 plt.close()
@@ -244,24 +220,35 @@ with center:
                 plt.close()
 
             st.divider()
-
-            # =========================
-            # DICE & IOU TABLE
-            # =========================
+            
             metrics_df = pd.DataFrame({
-                "Metric": [
-                    "Dice (Mean)", "Dice (Weighted)", "Dice (Best)",
-                    "IoU (Mean)", "IoU (Weighted)", "IoU (Best)"
-                ],
-                "Direct YOLO": DIRECT_DICE + DIRECT_IOU,
-                "Transfer YOLO": TRANSFER_DICE + TRANSFER_IOU
+                "Class": CLASS_NAMES,
+                "Direct Dice": DIRECT_DICE,
+                "Transfer Dice": TRANSFER_DICE,
+                "Direct IoU": DIRECT_IOU,
+                "Transfer IoU": TRANSFER_IOU
             })
 
-            st.markdown("### Dice & IoU Comparison")
+            st.markdown("### Dice & IoU per Class")
             st.dataframe(metrics_df, width="stretch")
 
-            st.success("Transfer Learning YOLO converges faster and achieves better performance")
+            st.divider()
 
+            avg_metrics_df = pd.DataFrame({
+                "Metric": ["Average Dice", "Average IoU"],
+                "Direct YOLO": [
+                    np.mean(DIRECT_DICE),
+                    np.mean(DIRECT_IOU)
+                ],
+                "Transfer YOLO": [
+                    np.mean(TRANSFER_DICE),
+                    np.mean(TRANSFER_IOU)
+                ]
+            })
+
+            st.markdown("### Average Dice & IoU Comparison")
+            st.dataframe(avg_metrics_df, width="stretch")
+            st.success("Transfer Learning YOLO achieves consistently better Dice and IoU across tumor classes")
 
     with tab_dataset:
         st.write("Dataset Information")
