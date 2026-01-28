@@ -169,13 +169,23 @@ with center:
 
             with col3:
                 st.markdown("### Direct YOLO Confusion Matrix")
-                plt.figure()
-                plt.imshow(DIRECT_CM)
-                plt.title("Direct YOLO")
-                plt.xlabel("Predicted")
-                plt.ylabel("True")
-                plt.xticks(range(len(CLASS_NAMES)), CLASS_NAMES, rotation=45, ha="right")
-                plt.yticks(range(len(CLASS_NAMES)), CLASS_NAMES)
+                plt.figure(facecolor="black")
+                plt.imshow(DIRECT_CM, cmap="magma")
+                plt.title("Direct YOLO", color="white")
+                plt.xlabel("Predicted", color="white")
+                plt.ylabel("True", color="white")
+                plt.xticks(
+                    range(len(CLASS_NAMES)),
+                    CLASS_NAMES,
+                    rotation=45,
+                    ha="right",
+                    color="white"
+                )
+                plt.yticks(
+                    range(len(CLASS_NAMES)),
+                    CLASS_NAMES,
+                    color="white"
+                )
 
                 for i in range(DIRECT_CM.shape[0]):
                     for j in range(DIRECT_CM.shape[1]):
@@ -185,22 +195,35 @@ with center:
                             DIRECT_CM[i, j],
                             ha="center",
                             va="center",
-                            color="white" if DIRECT_CM[i, j] > DIRECT_CM.max() / 2 else "black"
+                            color="white"
                         )
 
-                plt.colorbar()
+                cbar = plt.colorbar()
+                cbar.ax.yaxis.set_tick_params(color="white")
+                plt.setp(cbar.ax.get_yticklabels(), color="white")
+
                 st.pyplot(plt.gcf())
                 plt.close()
 
             with col4:
                 st.markdown("### Transfer YOLO Confusion Matrix")
-                plt.figure()
-                plt.imshow(TRANSFER_CM)
-                plt.title("Transfer YOLO")
-                plt.xlabel("Predicted")
-                plt.ylabel("True")
-                plt.xticks(range(len(CLASS_NAMES)), CLASS_NAMES, rotation=45, ha="right")
-                plt.yticks(range(len(CLASS_NAMES)), CLASS_NAMES)
+                plt.figure(facecolor="black")
+                plt.imshow(TRANSFER_CM, cmap="magma")
+                plt.title("Transfer YOLO", color="white")
+                plt.xlabel("Predicted", color="white")
+                plt.ylabel("True", color="white")
+                plt.xticks(
+                    range(len(CLASS_NAMES)),
+                    CLASS_NAMES,
+                    rotation=45,
+                    ha="right",
+                    color="white"
+                )
+                plt.yticks(
+                    range(len(CLASS_NAMES)),
+                    CLASS_NAMES,
+                    color="white"
+                )
 
                 for i in range(TRANSFER_CM.shape[0]):
                     for j in range(TRANSFER_CM.shape[1]):
@@ -210,10 +233,13 @@ with center:
                             TRANSFER_CM[i, j],
                             ha="center",
                             va="center",
-                            color="white" if TRANSFER_CM[i, j] > TRANSFER_CM.max() / 2 else "black"
+                            color="white"
                         )
 
-                plt.colorbar()
+                cbar = plt.colorbar()
+                cbar.ax.yaxis.set_tick_params(color="white")
+                plt.setp(cbar.ax.get_yticklabels(), color="white")
+
                 st.pyplot(plt.gcf())
                 plt.close()
 
