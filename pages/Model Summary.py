@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
 
 st.set_page_config(
     page_title="Model Summary",
@@ -91,8 +94,8 @@ with center:
             # =========================
             # CSV PATHS
             # =========================
-            DIRECT_CSV_PATH = r"..\utils\direct_yolo_3cls_results.csv"
-            TRANSFER_CSV_PATH = r"..\utils\direct_yolo_3cls_results.csv"
+            DIRECT_CSV_PATH = BASE_DIR / "utils" / "direct_yolo_3cls_results.csv"
+            DIRECT_CSV_PATH = BASE_DIR / "utils" / "direct_yolo_3cls_results.csv"
 
             loss_cols = [
                 "train/box_loss",
