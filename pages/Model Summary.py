@@ -170,7 +170,7 @@ with center:
             with col3:
                 st.markdown("### Direct YOLO Confusion Matrix")
                 plt.figure(facecolor="black")
-                plt.imshow(DIRECT_CM, cmap="magma")
+                plt.imshow(DIRECT_CM, cmap="cool")
                 plt.title("Direct YOLO", color="white")
                 plt.xlabel("Predicted", color="white")
                 plt.ylabel("True", color="white")
@@ -208,7 +208,7 @@ with center:
             with col4:
                 st.markdown("### Transfer YOLO Confusion Matrix")
                 plt.figure(facecolor="black")
-                plt.imshow(TRANSFER_CM, cmap="magma")
+                plt.imshow(TRANSFER_CM, cmap="cool")
                 plt.title("Transfer YOLO", color="white")
                 plt.xlabel("Predicted", color="white")
                 plt.ylabel("True", color="white")
