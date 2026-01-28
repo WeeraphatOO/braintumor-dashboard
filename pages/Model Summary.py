@@ -95,8 +95,7 @@ with center:
             # CSV PATHS
             # =========================
             DIRECT_CSV_PATH = BASE_DIR / "utils" / "direct_yolo_3cls_results.csv"
-            FREEZE_CSV_PATH = BASE_DIR / "utils" / "freeze_yolo_3cls_results.csv"
-            TRANSFER_CSV_PATH = BASE_DIR / "utils" / "transfer_yolo_3cls_results.csv"
+            TRANSFER_CSV_PATH = BASE_DIR / "utils" / "merged_yolo_transfer_3cls_results.csv"
 
             loss_cols = [
                 "train/box_loss",
@@ -143,10 +142,7 @@ with center:
             with col2:
                 st.markdown("### Transfer YOLO Total Loss")
 
-                df1 = pd.read_csv(TRANSFER_CSV_PATH)
-                df2 = pd.read_csv(FREEZE_CSV_PATH)
-                df = pd.concat([df1, df2], axis=0, ignore_index=True)
-                
+                df = pd.read_csv(TRANSFER_CSV_PATH)
                 df["train_total_loss"] = df[loss_cols].sum(axis=1)
                 df["val_total_loss"] = df[val_loss_cols].sum(axis=1)
 
