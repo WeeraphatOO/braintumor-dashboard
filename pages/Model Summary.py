@@ -220,9 +220,9 @@ with center:
                 plt.close()
 
             st.divider()
-            
+
             metrics_df = pd.DataFrame({
-                "Class": CLASS_NAMES,
+                "Class": ["glioma", "pituitary", "meningioma"],
                 "Direct Dice": DIRECT_DICE,
                 "Transfer Dice": TRANSFER_DICE,
                 "Direct IoU": DIRECT_IOU,
