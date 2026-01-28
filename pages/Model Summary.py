@@ -91,8 +91,8 @@ with center:
             # =========================
             # CSV PATHS
             # =========================
-            DIRECT_CSV_PATH = "..\utils\direct_yolo_3cls_results.csv"
-            TRANSFER_CSV_PATH = "..\utils\direct_yolo_3cls_results.csv"
+            DIRECT_CSV_PATH = r"..\utils\direct_yolo_3cls_results.csv"
+            TRANSFER_CSV_PATH = r"..\utils\direct_yolo_3cls_results.csv"
 
             loss_cols = [
                 "train/box_loss",
