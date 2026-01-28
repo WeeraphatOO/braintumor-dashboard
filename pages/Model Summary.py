@@ -195,7 +195,7 @@ with center:
                             DIRECT_CM[i, j],
                             ha="center",
                             va="center",
-                            color="white"
+                            color="black"
                         )
 
                 cbar = plt.colorbar()
@@ -233,7 +233,7 @@ with center:
                             TRANSFER_CM[i, j],
                             ha="center",
                             va="center",
-                            color="white"
+                            color="black"
                         )
 
                 cbar = plt.colorbar()
