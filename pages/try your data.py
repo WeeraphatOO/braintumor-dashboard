@@ -1,5 +1,7 @@
 import streamlit as st
 from PIL import Image
+import numpy as np
+
 # =========================
 # PAGE CONFIG
 # =========================
@@ -8,6 +10,7 @@ st.set_page_config(
     page_icon="🎈",
     layout="wide"
 )
+
 # =========================
 # LOAD YOLO MODEL (SAFE)
 # =========================
@@ -55,6 +58,8 @@ with center:
 
         if uploaded_file is not None:
             image = Image.open(uploaded_file).convert("RGB")
+            img_np = np.array(image)
+
             st.image(image, width="stretch")
             st.success("MRI scan uploaded successfully")
 
@@ -62,34 +67,36 @@ with center:
             # YOLO SEGMENTATION
             # =========================
             if model_choice == "YOLO Segmentation":
-                        model = load_yolo_seg()
+                model = load_yolo_seg()
 
-                        results = model(image, conf=0.25, verbose=False)
-                        result = results[0]
+                results = model(image, conf=0.25, verbose=False)
+                result = results[0]
 
-                        annotated = result.plot()
+                annotated = result.plot()
 
-                        st.subheader("Segmentation Result")
-                        st.image(annotated, width="stretch")
+                st.subheader("Segmentation Result")
+                st.image(annotated, width="stretch")
 
-                        st.subheader("Detected Objects")
-                        boxes = result.boxes.cpu().numpy()
+                st.subheader("Detected Objects")
+                boxes = result.boxes.cpu().numpy()
 
-                        if len(boxes) > 0:
-                            cols = st.columns(len(boxes))
-                            for i, box in enumerate(boxes):
-                                x1, y1, x2, y2 = box.xyxy[0].astype(int)
-                                crop = img_np[y1:y2, x1:x2]
+                if len(boxes) > 0:
+                    cols = st.columns(len(boxes))
+                    for i, box in enumerate(boxes):
+                        x1, y1, x2, y2 = box.xyxy[0].astype(int)
 
-                                cls_id = int(box.cls[0])
-                                conf = float(box.conf[0])
-                                class_name = result.names[cls_id]
+                        if x2 > x1 and y2 > y1:
+                            crop = img_np[y1:y2, x1:x2]
 
-                                with cols[i]:
-                                    st.write(f"{class_name} ({conf:.2f})")
-                                    st.image(crop)
-                        else:
-                            st.warning("No objects detected")
+                            cls_id = int(box.cls[0])
+                            conf = float(box.conf[0])
+                            class_name = result.names[cls_id]
+
+                            with cols[i]:
+                                st.write(f"{class_name} ({conf:.2f})")
+                                st.image(crop)
+                else:
+                    st.warning("No objects detected")
 
             else:
                 st.info(f"Selected model: {model_choice}")
