@@ -37,6 +37,8 @@ TRANSFER_IOU  = [0.66237, 0.75879, 0.88941]
 DIRECT_DICE = [0.77029, 0.8625, 0.92275]
 DIRECT_IOU  = [0.6264, 0.75824, 0.85659]
 
+CLASS_NAMES = ["glioma", "pituitary", "meningioma", "no tumor"]
+
 # =========================
 # HELPER FUNCTIONS
 # =========================
@@ -119,7 +121,7 @@ with center:
             # DIRECT YOLO LOSS
             # =========================
             with col1:
-                st.markdown("### Direct YOLO Total Loss")
+                st.markdown("### Direct YOLO Loss")
 
                 df = pd.read_csv(DIRECT_CSV_PATH)
 
@@ -140,7 +142,7 @@ with center:
             # TRANSFER YOLO LOSS
             # =========================
             with col2:
-                st.markdown("### Transfer YOLO Total Loss")
+                st.markdown("### Transfer Learning YOLO Loss")
 
                 df = pd.read_csv(TRANSFER_CSV_PATH)
                 df["train_total_loss"] = df[loss_cols].sum(axis=1)
@@ -161,6 +163,8 @@ with center:
             # =========================
             # CONFUSION MATRICES
             # =========================
+            CLASS_NAMES = ["glioma", "pituitary", "meningioma", "no tumor"]
+
             col3, col4 = st.columns(2)
 
             with col3:
@@ -170,9 +174,21 @@ with center:
                 plt.title("Direct YOLO")
                 plt.xlabel("Predicted")
                 plt.ylabel("True")
+                plt.xticks(range(len(CLASS_NAMES)), CLASS_NAMES, rotation=45, ha="right")
+                plt.yticks(range(len(CLASS_NAMES)), CLASS_NAMES)
+
                 for i in range(DIRECT_CM.shape[0]):
                     for j in range(DIRECT_CM.shape[1]):
-                        plt.text(j, i, DIRECT_CM[i, j], ha="center", va="center")
+                        plt.text(
+                            j,
+                            i,
+                            DIRECT_CM[i, j],
+                            ha="center",
+                            va="center",
+                            color="white" if DIRECT_CM[i, j] > DIRECT_CM.max() / 2 else "black"
+                        )
+
+                plt.colorbar()
                 st.pyplot(plt.gcf())
                 plt.close()
 
@@ -183,9 +199,21 @@ with center:
                 plt.title("Transfer YOLO")
                 plt.xlabel("Predicted")
                 plt.ylabel("True")
+                plt.xticks(range(len(CLASS_NAMES)), CLASS_NAMES, rotation=45, ha="right")
+                plt.yticks(range(len(CLASS_NAMES)), CLASS_NAMES)
+
                 for i in range(TRANSFER_CM.shape[0]):
                     for j in range(TRANSFER_CM.shape[1]):
-                        plt.text(j, i, TRANSFER_CM[i, j], ha="center", va="center")
+                        plt.text(
+                            j,
+                            i,
+                            TRANSFER_CM[i, j],
+                            ha="center",
+                            va="center",
+                            color="white" if TRANSFER_CM[i, j] > TRANSFER_CM.max() / 2 else "black"
+                        )
+
+                plt.colorbar()
                 st.pyplot(plt.gcf())
                 plt.close()
 
