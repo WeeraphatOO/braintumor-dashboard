@@ -147,12 +147,45 @@ with center:
                     logits = model(input_tensor)
                     pred_mask = logits.argmax(dim=1)[0].cpu().numpy()
 
+                # =========================
+                # 1️⃣ SHOW RAW ARGMAX MASKS
+                # =========================
+                st.subheader("Predicted Masks (Argmax per Class)")
+
+                num_classes = logits.shape[1]
+                cols = st.columns(num_classes)
+
+                for cls_id in range(num_classes):
+                    binary_mask = (pred_mask == cls_id).astype(np.uint8) * 255
+                    with cols[cls_id]:
+                        st.write(f"{CLASS_NAMES[cls_id]}")
+                        st.image(binary_mask, clamp=True)
+
+                # =========================
+                # 2️⃣ SHOW RAW PROBABILITY MAPS
+                # =========================
+                st.subheader("Raw Probability Maps (Softmax)")
+
+                probs = torch.softmax(logits, dim=1)[0].cpu().numpy()
+                cols = st.columns(num_classes)
+
+                for cls_id in range(num_classes):
+                    with cols[cls_id]:
+                        st.write(f"{CLASS_NAMES[cls_id]} prob")
+                        st.image(probs[cls_id], clamp=True)
+
+                # =========================
+                # 3️⃣ ORIGINAL OVERLAY (UNCHANGED)
+                # =========================
                 color_mask = mask_to_color(pred_mask)
                 overlay = (0.6 * img_np + 0.4 * color_mask).astype(np.uint8)
 
-                st.subheader("Segmentation Result")
+                st.subheader("Segmentation Result (Overlay)")
                 st.image(overlay, width="stretch")
 
+                # =========================
+                # 4️⃣ DETECTED REGIONS (UNCHANGED)
+                # =========================
                 boxes = extract_boxes(pred_mask)
 
                 st.subheader("Detected Regions")
