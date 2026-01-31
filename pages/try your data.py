@@ -139,61 +139,61 @@ with center:
                 model = load_unet()
                 model.eval()
 
-                input_tensor = preprocess_unet(img_np).to(device)
+                # =========================
+                # DEFINE VAL TRANSFORM (INLINE)
+                # =========================
+                import albumentations as A
+                from albumentations.pytorch import ToTensorV2
+
+                val_tf = A.Compose([
+                    A.Resize(512, 512),
+                    A.Normalize(),
+                    ToTensorV2()
+                ])
+
+                # =========================
+                # APPLY TRANSFORM (SAME AS CM)
+                # =========================
+                aug = val_tf(image=img_np)
+                img_tensor = aug["image"].unsqueeze(0).to(device)   # [1,3,512,512]
 
                 with torch.no_grad():
-                    logits = model(input_tensor)          # [1, C, H, W]
-                    pred_mask = logits.argmax(dim=1)[0]   # [H, W]
-                    pred_mask = pred_mask.cpu().numpy().astype(np.uint8)
-
-                # =========================
-                # RESIZE MASK TO ORIGINAL IMAGE SIZE
-                # =========================
-                h, w, _ = img_np.shape
-                pred_mask = cv2.resize(
-                    pred_mask,
-                    (w, h),
-                    interpolation=cv2.INTER_NEAREST
-                )
+                    logits = model(img_tensor)
+                    pred_mask_raw = logits.argmax(dim=1)[0]         # [512,512]
+                    pred_mask_raw = pred_mask_raw.cpu().numpy().astype(np.uint8)
 
                 # =========================
                 # IMAGE-LEVEL CLASS (CM LOGIC)
                 # =========================
-                tumor_pixels = pred_mask[pred_mask != 0]
+                tumor_pixels = pred_mask_raw[pred_mask_raw != 0]
 
                 if tumor_pixels.size == 0:
-                    image_cls = 0   # no tumor
+                    image_cls = 0
                 else:
                     values, counts = np.unique(tumor_pixels, return_counts=True)
                     image_cls = values[counts.argmax()]
 
                 st.subheader("Predicted Class")
-                st.success(f"{CLASS_NAMES[image_cls]}")
+                st.success(CLASS_NAMES[image_cls])
+
+                # =========================
+                # RESIZE FOR DISPLAY ONLY
+                # =========================
+                h, w, _ = img_np.shape
+                pred_mask_vis = cv2.resize(
+                    pred_mask_raw,
+                    (w, h),
+                    interpolation=cv2.INTER_NEAREST
+                )
 
                 # =========================
                 # SEGMENTATION OVERLAY
                 # =========================
-                color_mask = mask_to_color(pred_mask)
+                color_mask = mask_to_color(pred_mask_vis)
                 overlay = (0.6 * img_np + 0.4 * color_mask).astype(np.uint8)
 
                 st.subheader("Segmentation Result (Overlay)")
                 st.image(overlay, width="stretch")
-
-                # =========================
-                # DETECTED REGIONS
-                # =========================
-                boxes = extract_boxes(pred_mask)
-
-                st.subheader("Detected Regions")
-                if len(boxes) > 0:
-                    cols = st.columns(len(boxes))
-                    for i, (cls_id, x1, y1, x2, y2) in enumerate(boxes):
-                        crop = img_np[y1:y2, x1:x2]
-                        with cols[i]:
-                            st.write(CLASS_NAMES[cls_id])
-                            st.image(crop)
-                else:
-                    st.warning("No tumor detected")
 
 
             # =========================
