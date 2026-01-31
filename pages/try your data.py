@@ -68,8 +68,12 @@ def preprocess_unet(img):
     img = torch.from_numpy(img).permute(2, 0, 1).float()
     return img.unsqueeze(0)
 
-def mask_to_color(mask):
-    return COLORS[mask]
+def mask_to_color(mask, cls):
+    h, w = mask.shape
+    color = COLORS[cls] 
+    color_mask = np.zeros((h, w, 3), dtype=np.uint8)
+    color_mask[mask != 0] = color
+    return color_mask
 
 def extract_boxes(mask):
     boxes = []
@@ -136,15 +140,15 @@ with center:
             st.success("MRI scan uploaded successfully")
 
             if model_choice == "U-Net":
+                import albumentations as A
+                from albumentations.pytorch import ToTensorV2
+
                 model = load_unet()
                 model.eval()
 
                 # =========================
                 # DEFINE VAL TRANSFORM (INLINE)
                 # =========================
-                import albumentations as A
-                from albumentations.pytorch import ToTensorV2
-
                 val_tf = A.Compose([
                     A.Resize(512, 512),
                     A.Normalize(),
@@ -152,15 +156,14 @@ with center:
                 ])
 
                 # =========================
-                # APPLY TRANSFORM (SAME AS CM)
+                # APPLY TRANSFORM (CM-CONSISTENT)
                 # =========================
                 aug = val_tf(image=img_np)
-                img_tensor = aug["image"].unsqueeze(0).to(device)   # [1,3,512,512]
+                img_tensor = aug["image"].unsqueeze(0).to(device)  # [1,3,512,512]
 
                 with torch.no_grad():
                     logits = model(img_tensor)
-                    pred_mask_raw = logits.argmax(dim=1)[0]         # [512,512]
-                    pred_mask_raw = pred_mask_raw.cpu().numpy().astype(np.uint8)
+                    pred_mask_raw = logits.argmax(dim=1)[0].cpu().numpy().astype(np.uint8)
 
                 # =========================
                 # IMAGE-LEVEL CLASS (CM LOGIC)
@@ -169,15 +172,17 @@ with center:
 
                 if tumor_pixels.size == 0:
                     image_cls = 0
+                    confidence = 0.0
                 else:
                     values, counts = np.unique(tumor_pixels, return_counts=True)
-                    image_cls = values[counts.argmax()]
+                    image_cls = int(values[counts.argmax()])
+                    confidence = float(tumor_pixels.size / pred_mask_raw.size)
 
                 st.subheader("Predicted Class")
-                st.success(CLASS_NAMES[image_cls])
+                st.success(f"{CLASS_NAMES[image_cls]} ({confidence:.2f})")
 
                 # =========================
-                # RESIZE FOR DISPLAY ONLY
+                # RESIZE MASK FOR DISPLAY
                 # =========================
                 h, w, _ = img_np.shape
                 pred_mask_vis = cv2.resize(
@@ -187,14 +192,71 @@ with center:
                 )
 
                 # =========================
-                # SEGMENTATION OVERLAY
+                # CREATE COLOR MASK (CLASS COLOR)
                 # =========================
-                color_mask = mask_to_color(pred_mask_vis)
+                color_mask = np.zeros((h, w, 3), dtype=np.uint8)
+                color_mask[pred_mask_vis != 0] = COLORS[image_cls]
+
+                # =========================
+                # OVERLAY
+                # =========================
                 overlay = (0.6 * img_np + 0.4 * color_mask).astype(np.uint8)
 
-                st.subheader("Segmentation Result (Overlay)")
-                st.image(overlay, width="stretch")
+                # =========================
+                # COMPUTE BOUNDING BOX
+                # =========================
+                ys, xs = np.where(pred_mask_vis != 0)
 
+                if len(xs) > 0 and len(ys) > 0:
+                    x1, x2 = xs.min(), xs.max()
+                    y1, y2 = ys.min(), ys.max()
+
+                    box_color = tuple(int(c) for c in COLORS[image_cls])
+
+                    # draw bounding box
+                    cv2.rectangle(
+                        overlay,
+                        (x1, y1),
+                        (x2, y2),
+                        box_color,
+                        thickness=2
+                    )
+
+                    label = f"{CLASS_NAMES[image_cls]} {confidence:.2f}"
+
+                    # label background
+                    (tw, th), _ = cv2.getTextSize(
+                        label,
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        2
+                    )
+
+                    cv2.rectangle(
+                        overlay,
+                        (x1, y1 - th - 8),
+                        (x1 + tw + 6, y1),
+                        box_color,
+                        -1
+                    )
+
+                    # label text
+                    cv2.putText(
+                        overlay,
+                        label,
+                        (x1 + 3, y1 - 4),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (255, 255, 255),
+                        2,
+                        cv2.LINE_AA
+                    )
+
+                # =========================
+                # DISPLAY RESULT
+                # =========================
+                st.subheader("Segmentation Result")
+                st.image(overlay, width="stretch")
 
             # =========================
             # YOLO SEGMENTATION
