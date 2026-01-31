@@ -179,7 +179,7 @@ with center:
                     confidence = float(tumor_pixels.size / pred_mask_raw.size)
 
                 st.subheader("Predicted Class")
-                st.success(f"{CLASS_NAMES[image_cls]} ({confidence:.2f})")
+                st.success(f"{CLASS_NAMES[image_cls]})")
 
                 # =========================
                 # RESIZE MASK FOR DISPLAY
@@ -222,7 +222,7 @@ with center:
                         thickness=2
                     )
 
-                    label = f"{CLASS_NAMES[image_cls]} {confidence:.2f}"
+                    label = f"{CLASS_NAMES[image_cls]}"
 
                     # label background
                     (tw, th), _ = cv2.getTextSize(
@@ -264,10 +264,10 @@ with center:
             elif model_choice == "YOLO Segmentation":
                 model = load_yolo_seg()
 
-                results = model(image, conf=0.25, verbose=False)
+                results = model(image, conf=0.3, verbose=False)
                 result = results[0]
 
-                annotated = result.plot()
+                annotated = result.plot(conf=False)
 
                 st.subheader("Segmentation Result")
                 st.image(annotated, width="stretch")
@@ -284,11 +284,10 @@ with center:
                             crop = img_np[y1:y2, x1:x2]
 
                             cls_id = int(box.cls[0])
-                            conf = float(box.conf[0])
                             class_name = result.names[cls_id]
 
                             with cols[i]:
-                                st.write(f"{class_name} ({conf:.2f})")
+                                st.write(f"{class_name}")
                                 st.image(crop)
                 else:
                     st.warning("No objects detected")
