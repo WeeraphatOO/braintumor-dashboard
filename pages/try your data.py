@@ -157,6 +157,20 @@ with center:
                 )
 
                 # =========================
+                # IMAGE-LEVEL CLASS (CM LOGIC)
+                # =========================
+                tumor_pixels = pred_mask[pred_mask != 0]
+
+                if tumor_pixels.size == 0:
+                    image_cls = 0   # no tumor
+                else:
+                    values, counts = np.unique(tumor_pixels, return_counts=True)
+                    image_cls = values[counts.argmax()]
+
+                st.subheader("Predicted Class")
+                st.success(f"{CLASS_NAMES[image_cls]}")
+
+                # =========================
                 # SEGMENTATION OVERLAY
                 # =========================
                 color_mask = mask_to_color(pred_mask)
