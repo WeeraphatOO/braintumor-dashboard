@@ -140,42 +140,17 @@ with center:
             # =========================
             if model_choice == "U-Net":
                 model = load_unet()
+                model.eval()
 
                 input_tensor = preprocess_unet(img_np).to(device)
 
                 with torch.no_grad():
-                    logits = model(input_tensor)
-                    pred_mask = logits.argmax(dim=1)[0].cpu().numpy()
+                    logits = model(input_tensor)          # [1, C, H, W]
+                    pred_mask = logits.argmax(dim=1)[0]   # [H, W]
+                    pred_mask = pred_mask.cpu().numpy().astype(np.uint8)
 
                 # =========================
-                # 1️⃣ SHOW RAW ARGMAX MASKS
-                # =========================
-                st.subheader("Predicted Masks (Argmax per Class)")
-
-                num_classes = logits.shape[1]
-                cols = st.columns(num_classes)
-
-                for cls_id in range(num_classes):
-                    binary_mask = (pred_mask == cls_id).astype(np.uint8) * 255
-                    with cols[cls_id]:
-                        st.write(f"{CLASS_NAMES[cls_id]}")
-                        st.image(binary_mask, clamp=True)
-
-                # =========================
-                # 2️⃣ SHOW RAW PROBABILITY MAPS
-                # =========================
-                st.subheader("Raw Probability Maps (Softmax)")
-
-                probs = torch.softmax(logits, dim=1)[0].cpu().numpy()
-                cols = st.columns(num_classes)
-
-                for cls_id in range(num_classes):
-                    with cols[cls_id]:
-                        st.write(f"{CLASS_NAMES[cls_id]} prob")
-                        st.image(probs[cls_id], clamp=True)
-
-                # =========================
-                # 3️⃣ ORIGINAL OVERLAY (UNCHANGED)
+                # SEGMENTATION OVERLAY
                 # =========================
                 color_mask = mask_to_color(pred_mask)
                 overlay = (0.6 * img_np + 0.4 * color_mask).astype(np.uint8)
@@ -184,7 +159,7 @@ with center:
                 st.image(overlay, width="stretch")
 
                 # =========================
-                # 4️⃣ DETECTED REGIONS (UNCHANGED)
+                # DETECTED REGIONS
                 # =========================
                 boxes = extract_boxes(pred_mask)
 
