@@ -135,9 +135,6 @@ with center:
             st.image(image, width="stretch")
             st.success("MRI scan uploaded successfully")
 
-            # =========================
-            # U-NET
-            # =========================
             if model_choice == "U-Net":
                 model = load_unet()
                 model.eval()
@@ -148,6 +145,16 @@ with center:
                     logits = model(input_tensor)          # [1, C, H, W]
                     pred_mask = logits.argmax(dim=1)[0]   # [H, W]
                     pred_mask = pred_mask.cpu().numpy().astype(np.uint8)
+
+                # =========================
+                # RESIZE MASK TO ORIGINAL IMAGE SIZE
+                # =========================
+                h, w, _ = img_np.shape
+                pred_mask = cv2.resize(
+                    pred_mask,
+                    (w, h),
+                    interpolation=cv2.INTER_NEAREST
+                )
 
                 # =========================
                 # SEGMENTATION OVERLAY
@@ -173,6 +180,7 @@ with center:
                             st.image(crop)
                 else:
                     st.warning("No tumor detected")
+
 
             # =========================
             # YOLO SEGMENTATION
