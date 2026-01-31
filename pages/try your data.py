@@ -53,7 +53,7 @@ def load_unet():
         classes=len(CLASS_NAMES)
     )
     model.load_state_dict(
-        torch.load("models/3cls/unet_3cls.pth", map_location=device)
+        torch.load("models/3cls/best_unet_transfer_3cls.pth", map_location=device)
     )
     model.to(device)
     model.eval()
