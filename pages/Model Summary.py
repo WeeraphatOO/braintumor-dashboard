@@ -60,38 +60,44 @@ with center:
             # =========================
             # CSV PATHS
             # =========================
-            DIRECT_CSV_PATH = BASE_DIR / "utils" / "direct_yolo_3cls_results.csv"
-            TRANSFER_CSV_PATH = BASE_DIR / "utils" / "merged_yolo_transfer_3cls_results.csv"
-
-            loss_cols = [
-                "train/box_loss",
-                "train/seg_loss",
-                "train/cls_loss",
-                "train/dfl_loss",
-                "train/sem_loss"
-            ]
-
-            val_loss_cols = [
-                "val/box_loss",
-                "val/seg_loss",
-                "val/cls_loss",
-                "val/dfl_loss",
-                "val/sem_loss"
-            ]
+            DIRECT_CSV_PATH = BASE_DIR / "utils" / "train_history_unet_direct_3cls.csv"
+            TRANSFER_CSV_PATH = BASE_DIR / "utils" / "train_history_unet_direct_3cls.csv"
 
             col1, col2 = st.columns(2)
 
             # =========================
-            # DIRECT YOLO LOSS
+            # DIRECT U-Net LOSS
             # =========================
             with col1:
                 st.markdown("### Direct U-Net Loss")
+                df = pd.read_csv(DIRECT_CSV_PATH)
+
+                plt.figure()
+                plt.plot(df["epoch"], df["train_loss"], label="Train Loss")
+                plt.plot(df["epoch"], df["val_loss"], label="Val Loss")
+                plt.xlabel("Epoch")
+                plt.ylabel("Total Loss")
+                plt.title("Direct Training U-Net Total Loss")
+                plt.legend()
+                st.pyplot(plt.gcf())
+                plt.close()
 
             # =========================
-            # TRANSFER YOLO LOSS
+            # TRANSFER U-Net LOSS
             # =========================
             with col2:
                 st.markdown("### Transfer Learning U-Net Loss")
+                df = pd.read_csv(TRANSFER_CSV_PATH)
+
+                plt.figure()
+                plt.plot(df["epoch"], df["train_loss"], label="Train Loss")
+                plt.plot(df["epoch"], df["val_loss"], label="Val Loss")
+                plt.xlabel("Epoch")
+                plt.ylabel("Total Loss")
+                plt.title("Direct Training U-Net Total Loss")
+                plt.legend()
+                st.pyplot(plt.gcf())
+                plt.close()
 
 
             st.divider()
@@ -208,7 +214,9 @@ with center:
 
             st.markdown("### Average Dice & IoU Comparison")
             st.dataframe(avg_metrics_df, width="stretch")
-            st.success("Transfer Learning YOLO achieves consistently better Dice and IoU across tumor classes")
+            st.success(
+                "Transfer Learning U-Net provides class-dependent results, with improvement observed mainly in glioma segmentation."
+            )
 
         elif algorithm == "Hybrid Model (YOLO + U-Net)":
             st.error("ANN Accuracy : 91.2%")
