@@ -59,6 +59,26 @@ def load_unet():
     model.eval()
     return model
 
+@st.cache_resource
+def load_yolo_detect():
+    from ultralytics import YOLO
+    return YOLO("models/best_yolo_hybrid_transfer.pt")
+
+@st.cache_resource
+def load_hybrid_unet():
+    from segmentation_models_pytorch import Unet
+    model = Unet(
+        encoder_name="resnet34",
+        encoder_weights=None,
+        in_channels=1,
+        classes=len(CLASS_NAMES)
+    )
+    model.load_state_dict(
+        torch.load("models/best_unet_hybrid_transfer.pth", map_location=device)
+    )
+    model.to(device)
+    model.eval()
+    return model
 # =========================
 # UTILS
 # =========================
@@ -292,12 +312,136 @@ with center:
                 else:
                     st.warning("No objects detected")
 
-            # =========================
-            # HYBRID (NOT IMPLEMENTED)
-            # =========================
-            else:
-                st.info(f"Selected model: {model_choice}")
-                st.info("This pipeline is not implemented yet")
+            elif model_choice == "Hybrid Model (YOLO Seg + U-Net)":
+
+                yolo = load_yolo_detect()
+                unet = load_hybrid_unet()
+
+                # =========================
+                # YOLO DETECTION
+                # =========================
+                results = yolo(image, conf=0.3, verbose=False)
+                result = results[0]
+
+                boxes = result.boxes
+
+                h, w, _ = img_np.shape
+                final_mask = np.zeros((h, w), dtype=np.uint8)
+
+                detected_classes = []
+
+                # =========================
+                # LOOP YOLO BOXES → U-NET
+                # =========================
+                for box in boxes:
+                    x1, y1, x2, y2 = box.xyxy[0].int().tolist()
+
+                    if x2 <= x1 or y2 <= y1:
+                        continue
+
+                    crop = img_np[y1:y2, x1:x2]
+
+                    # preprocess for UNet
+                    crop_resized = cv2.resize(crop, (512, 512))
+                    crop_tensor = (
+                        torch.from_numpy(crop_resized / 255.0)
+                        .permute(2, 0, 1)
+                        .unsqueeze(0)
+                        .float()
+                        .to(device)
+                    )
+
+                    with torch.no_grad():
+                        logits = unet(crop_tensor)
+                        crop_mask = logits.argmax(dim=1)[0].cpu().numpy().astype(np.uint8)
+
+                    # resize mask back to box size
+                    crop_mask = cv2.resize(
+                        crop_mask,
+                        (x2 - x1, y2 - y1),
+                        interpolation=cv2.INTER_NEAREST
+                    )
+
+                    final_mask[y1:y2, x1:x2] = np.maximum(
+                        final_mask[y1:y2, x1:x2],
+                        crop_mask
+                    )
+
+                    detected_classes.extend(np.unique(crop_mask[crop_mask != 0]))
+
+                # =========================
+                # IMAGE-LEVEL CLASS
+                # =========================
+                if len(detected_classes) == 0:
+                    image_cls = 0
+                else:
+                    values, counts = np.unique(detected_classes, return_counts=True)
+                    image_cls = int(values[counts.argmax()])
+
+                # =========================
+                # COLOR MASK (MERGED)
+                # =========================
+                color_mask = np.zeros((h, w, 3), dtype=np.uint8)
+                color_mask[final_mask != 0] = COLORS[image_cls]
+
+                overlay = (0.6 * img_np + 0.4 * color_mask).astype(np.uint8)
+
+                # =========================
+                # SINGLE BOUNDING BOX (MERGED)
+                # =========================
+                ys, xs = np.where(final_mask != 0)
+
+                if len(xs) > 0 and len(ys) > 0:
+                    x1, x2 = xs.min(), xs.max()
+                    y1, y2 = ys.min(), ys.max()
+
+                    box_color = tuple(int(c) for c in COLORS[image_cls])
+
+                    cv2.rectangle(
+                        overlay,
+                        (x1, y1),
+                        (x2, y2),
+                        box_color,
+                        2
+                    )
+
+                    label = CLASS_NAMES[image_cls]
+
+                    (tw, th), _ = cv2.getTextSize(
+                        label,
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        2
+                    )
+
+                    cv2.rectangle(
+                        overlay,
+                        (x1, y1 - th - 8),
+                        (x1 + tw + 6, y1),
+                        box_color,
+                        -1
+                    )
+
+                    cv2.putText(
+                        overlay,
+                        label,
+                        (x1 + 3, y1 - 4),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (255, 255, 255),
+                        2,
+                        cv2.LINE_AA
+                    )
+
+                # =========================
+                # DISPLAY
+                # =========================
+                st.subheader("Predicted Class")
+                st.success(CLASS_NAMES[image_cls])
+
+                st.subheader("Hybrid Segmentation Result")
+                st.image(overlay, width="stretch")
+
 
     else:
         st.info("Please select a model to continue")

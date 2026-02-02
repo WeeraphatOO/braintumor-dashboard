@@ -61,7 +61,7 @@ with center:
             # CSV PATHS
             # =========================
             DIRECT_CSV_PATH = BASE_DIR / "utils" / "train_history_unet_direct_3cls.csv"
-            TRANSFER_CSV_PATH = BASE_DIR / "utils" / "train_history_unet_direct_3cls.csv"
+            TRANSFER_CSV_PATH = BASE_DIR / "utils" / "train_history_unet_transfer_3cls.csv"
 
             col1, col2 = st.columns(2)
 
@@ -113,7 +113,7 @@ with center:
                 st.markdown("### Direct U-Net Confusion Matrix")
                 plt.figure(facecolor="black")
                 plt.imshow(DIRECT_CM, cmap="cool")
-                plt.title("Direct YOLO", color="white")
+                plt.title("Direct U-Net", color="white")
                 plt.xlabel("Predicted", color="white")
                 plt.ylabel("True", color="white")
                 plt.xticks(
@@ -151,7 +151,7 @@ with center:
                 st.markdown("### Transfer U-Net Confusion Matrix")
                 plt.figure(facecolor="black")
                 plt.imshow(TRANSFER_CM, cmap="cool")
-                plt.title("Transfer YOLO", color="white")
+                plt.title("Transfer U-Net", color="white")
                 plt.xlabel("Predicted", color="white")
                 plt.ylabel("True", color="white")
                 plt.xticks(
