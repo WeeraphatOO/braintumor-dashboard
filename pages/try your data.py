@@ -316,23 +316,34 @@ with center:
 
                 yolo = load_yolo_detect()
                 unet = load_hybrid_unet()
+                unet.eval()
 
                 # =========================
-                # YOLO DETECTION
+                # YOLO DETECTION + CLASS VOTE
                 # =========================
                 results = yolo(image, conf=0.3, verbose=False)
                 result = results[0]
 
                 boxes = result.boxes
 
+                # ---- YOLO CLASS VOTE ----
+                if boxes is not None and len(boxes) > 0:
+                    yolo_cls = boxes.cls.cpu().numpy().astype(int)
+                    values, counts = np.unique(yolo_cls, return_counts=True)
+                    voted_cls = int(values[counts.argmax()])
+
+                    # YOLO → segmentation class mapping
+                    yolo_map = {0: 3, 1: 1, 2: 2}
+                    image_cls = yolo_map.get(voted_cls, 0)
+                else:
+                    image_cls = 0  # no tumor
+
+                # =========================
+                # HYBRID SEGMENTATION (BINARY)
+                # =========================
                 h, w, _ = img_np.shape
-                final_mask = np.zeros((h, w), dtype=np.uint8)
+                pred_mask = np.zeros((h, w), dtype=np.float32)
 
-                detected_classes = []
-
-                # =========================
-                # LOOP YOLO BOXES → U-NET
-                # =========================
                 for box in boxes:
                     x1, y1, x2, y2 = box.xyxy[0].int().tolist()
 
@@ -341,7 +352,7 @@ with center:
 
                     crop = img_np[y1:y2, x1:x2]
 
-                    # preprocess for UNet
+                    # preprocess (same logic as offline)
                     crop_resized = cv2.resize(crop, (512, 512))
                     crop_tensor = (
                         torch.from_numpy(crop_resized / 255.0)
@@ -352,44 +363,33 @@ with center:
                     )
 
                     with torch.no_grad():
-                        logits = unet(crop_tensor)
-                        crop_mask = logits.argmax(dim=1)[0].cpu().numpy().astype(np.uint8)
+                        seg = torch.sigmoid(unet(crop_tensor))[0, 0].cpu().numpy()
 
-                    # resize mask back to box size
-                    crop_mask = cv2.resize(
-                        crop_mask,
+                    seg = cv2.resize(
+                        seg,
                         (x2 - x1, y2 - y1),
                         interpolation=cv2.INTER_NEAREST
                     )
 
-                    final_mask[y1:y2, x1:x2] = np.maximum(
-                        final_mask[y1:y2, x1:x2],
-                        crop_mask
+                    pred_mask[y1:y2, x1:x2] = np.maximum(
+                        pred_mask[y1:y2, x1:x2],
+                        seg
                     )
 
-                    detected_classes.extend(np.unique(crop_mask[crop_mask != 0]))
+                hybrid_mask = (pred_mask > 0.5).astype(np.uint8)
 
                 # =========================
-                # IMAGE-LEVEL CLASS
-                # =========================
-                if len(detected_classes) == 0:
-                    image_cls = 0
-                else:
-                    values, counts = np.unique(detected_classes, return_counts=True)
-                    image_cls = int(values[counts.argmax()])
-
-                # =========================
-                # COLOR MASK (MERGED)
+                # COLOR OVERLAY (YOLO CLASS)
                 # =========================
                 color_mask = np.zeros((h, w, 3), dtype=np.uint8)
-                color_mask[final_mask != 0] = COLORS[image_cls]
+                color_mask[hybrid_mask != 0] = COLORS[image_cls]
 
                 overlay = (0.6 * img_np + 0.4 * color_mask).astype(np.uint8)
 
                 # =========================
-                # SINGLE BOUNDING BOX (MERGED)
+                # MERGED BOUNDING BOX
                 # =========================
-                ys, xs = np.where(final_mask != 0)
+                ys, xs = np.where(hybrid_mask != 0)
 
                 if len(xs) > 0 and len(ys) > 0:
                     x1, x2 = xs.min(), xs.max()
@@ -441,7 +441,5 @@ with center:
 
                 st.subheader("Hybrid Segmentation Result")
                 st.image(overlay, width="stretch")
-
-
     else:
         st.info("Please select a model to continue")
