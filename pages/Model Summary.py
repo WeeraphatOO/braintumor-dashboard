@@ -219,7 +219,207 @@ with center:
             )
 
         elif algorithm == "Hybrid Model (YOLO + U-Net)":
-            st.error("ANN Accuracy : 91.2%")
+
+            st.subheader("Hybrid Model Performance")
+            st.info(
+                "Hybrid pipeline using YOLO for detection & classification "
+                "and U-Net for tumor segmentation (trained separately)."
+            )
+
+            st.info(
+                "Hybrid pipeline using YOLO for tumor detection & classification "
+                "and U-Net for fine-grained tumor segmentation. "
+                "Both models are trained separately and combined at inference time."
+            )
+
+            st.warning(
+                "Note: The confusion matrix shown below is identical to Pure YOLO. "
+                "In the Hybrid model, YOLO is responsible for detection and classification, "
+                "while U-Net performs segmentation only."
+            )
+
+            # =========================
+            # REUSE YOLO CONFUSION MATRIX
+            # =========================
+            CLASS_NAMES = ["glioma", "pituitary", "meningioma", "no tumor"]
+
+            TRANSFER_CM = np.array([
+                [242, 1, 5, 8],
+                [1, 293, 2, 4],
+                [3, 3, 297, 4],
+                [0, 0, 0, 140]
+            ])
+
+            DIRECT_CM = np.array([
+                [228, 2, 4, 22],
+                [1, 296, 2, 2],
+                [8, 4, 298, 3],
+                [0, 0, 0, 140]
+            ])
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("### Direct YOLO Confusion Matrix (Hybrid Detection)")
+                plt.figure(facecolor="black")
+                plt.imshow(DIRECT_CM, cmap="cool")
+                plt.title("Hybrid Model (YOLO Detect)", color="white")
+                plt.xlabel("Predicted", color="white")
+                plt.ylabel("True", color="white")
+                plt.xticks(range(4), CLASS_NAMES, rotation=45, ha="right", color="white")
+                plt.yticks(range(4), CLASS_NAMES, color="white")
+
+                for i in range(4):
+                    for j in range(4):
+                        plt.text(j, i, DIRECT_CM[i, j], ha="center", va="center", color="black")
+
+                cbar = plt.colorbar()
+                cbar.ax.yaxis.set_tick_params(color="white")
+                plt.setp(cbar.ax.get_yticklabels(), color="white")
+
+                st.pyplot(plt.gcf())
+                plt.close()
+
+            with col2:
+                st.markdown("### Transfer YOLO Confusion Matrix (Hybrid Detection)")
+                plt.figure(facecolor="black")
+                plt.imshow(TRANSFER_CM, cmap="cool")
+                plt.title("Hybrid Model (YOLO Detect)", color="white")
+                plt.xlabel("Predicted", color="white")
+                plt.ylabel("True", color="white")
+                plt.xticks(range(4), CLASS_NAMES, rotation=45, ha="right", color="white")
+                plt.yticks(range(4), CLASS_NAMES, color="white")
+
+                for i in range(4):
+                    for j in range(4):
+                        plt.text(j, i, TRANSFER_CM[i, j], ha="center", va="center", color="black")
+
+                cbar = plt.colorbar()
+                cbar.ax.yaxis.set_tick_params(color="white")
+                plt.setp(cbar.ax.get_yticklabels(), color="white")
+
+                st.pyplot(plt.gcf())
+                plt.close()
+
+            st.divider()
+
+            st.success(
+                "In the Hybrid model, YOLO detection is equivalent to YOLO segmentation "
+                "without using the segmentation head. "
+                "Therefore, the classification performance remains identical to Pure YOLO, "
+                "while U-Net improves spatial segmentation quality."
+            )
+
+            # =========================
+            # CSV PATHS (REUSE EXISTING)
+            # =========================
+            UNET_DIRECT_CSV = BASE_DIR / "utils" / "yolo_crop_unet_train_history_direct_3cls.csv"
+            UNET_TRANSFER_CSV = BASE_DIR / "utils" / "yolo_crop_unet_train_history_transfer.csv"
+
+            YOLO_DIRECT_CSV = BASE_DIR / "utils" / "yolo_for_unet_transfer.csv"
+            YOLO_TRANSFER_CSV = BASE_DIR / "utils" / "yolo_for_unet_direct.csv"
+
+            # =========================
+            # U-NET LOSS (SEGMENTATION)
+            # =========================
+            st.markdown("## U-Net Segmentation Loss")
+
+            col3, col4 = st.columns(2)
+
+            with col3:
+                st.markdown("### Direct U-Net")
+                df = pd.read_csv(UNET_DIRECT_CSV)
+
+                plt.figure()
+                plt.plot(df["epoch"], df["train_loss"], label="Train Loss")
+                plt.plot(df["epoch"], df["val_loss"], label="Val Loss")
+                plt.xlabel("Epoch")
+                plt.ylabel("Loss")
+                plt.title("Direct U-Net Loss")
+                plt.legend()
+                st.pyplot(plt.gcf())
+                plt.close()
+
+            with col4:
+                st.markdown("### Transfer Learning U-Net")
+                df = pd.read_csv(UNET_TRANSFER_CSV)
+
+                plt.figure()
+                plt.plot(df["epoch"], df["train_loss"], label="Train Loss")
+                plt.plot(df["epoch"], df["val_loss"], label="Val Loss")
+                plt.xlabel("Epoch")
+                plt.ylabel("Loss")
+                plt.title("Transfer U-Net Loss")
+                plt.legend()
+                st.pyplot(plt.gcf())
+                plt.close()
+
+            st.divider()
+
+            # =========================
+            # YOLO LOSS (DETECTION + SEG)
+            # =========================
+            st.markdown("## YOLO Detection Loss")
+
+            loss_cols = [
+                "train/box_loss",
+                "train/cls_loss",
+                "train/dfl_loss"
+            ]
+
+            val_loss_cols = [
+                "val/box_loss",
+                "val/cls_loss",
+                "val/dfl_loss"
+            ]
+
+            col5, col6 = st.columns(2)
+
+            with col5:
+                st.markdown("### Direct YOLO")
+                df = pd.read_csv(YOLO_DIRECT_CSV)
+
+                df["train_total_loss"] = df[loss_cols].sum(axis=1)
+                df["val_total_loss"] = df[val_loss_cols].sum(axis=1)
+
+                plt.figure()
+                plt.plot(df["epoch"], df["train_total_loss"], label="Train Loss")
+                plt.plot(df["epoch"], df["val_total_loss"], label="Val Loss")
+                plt.xlabel("Epoch")
+                plt.ylabel("Loss")
+                plt.title("Direct YOLO Total Loss")
+                plt.legend()
+                st.pyplot(plt.gcf())
+                plt.close()
+
+            with col6:
+                st.markdown("### Transfer Learning YOLO")
+                df = pd.read_csv(YOLO_TRANSFER_CSV)
+
+                df["train_total_loss"] = df[loss_cols].sum(axis=1)
+                df["val_total_loss"] = df[val_loss_cols].sum(axis=1)
+
+                plt.figure()
+                plt.plot(df["epoch"], df["train_total_loss"], label="Train Loss")
+                plt.plot(df["epoch"], df["val_total_loss"], label="Val Loss")
+                plt.xlabel("Epoch")
+                plt.ylabel("Loss")
+                plt.title("Transfer YOLO Total Loss")
+                plt.legend()
+                st.pyplot(plt.gcf())
+                plt.close()
+
+            st.divider()
+
+            # =========================
+            # HYBRID EXPLANATION
+            # =========================
+            st.success(
+                "The Hybrid model does not introduce a new training loss. "
+                "YOLO and U-Net are trained independently and combined at inference time, "
+                "allowing YOLO to guide localization while U-Net performs fine-grained segmentation."
+            )
+
 
         elif algorithm == "Pure YOLO":
             st.subheader("YOLO Performance Comparison")

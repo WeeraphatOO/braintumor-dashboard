@@ -140,7 +140,7 @@ with center:
         [
             "Choose option",
             "U-Net",
-            "Hybrid Model (YOLO Seg + U-Net)",
+            "Hybrid Model (YOLO Detect + U-Net)",
             "YOLO Segmentation"
         ]
     )
@@ -312,7 +312,7 @@ with center:
                 else:
                     st.warning("No objects detected")
 
-            elif model_choice == "Hybrid Model (YOLO Seg + U-Net)":
+            elif model_choice == "Hybrid Model (YOLO Detect + U-Net)":
 
                 yolo = load_yolo_detect()
                 unet = load_hybrid_unet()
