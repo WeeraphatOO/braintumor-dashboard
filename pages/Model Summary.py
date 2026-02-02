@@ -301,7 +301,6 @@ with center:
                 st.pyplot(plt.gcf())
                 plt.close()
 
-            st.divider()
 
             st.success(
                 "In the Hybrid model, YOLO detection is equivalent to YOLO segmentation "
@@ -309,6 +308,7 @@ with center:
                 "Therefore, the classification performance remains identical to Pure YOLO, "
                 "while U-Net improves spatial segmentation quality."
             )
+            st.divider()
 
             # =========================
             # CSV PATHS (REUSE EXISTING)
@@ -409,7 +409,6 @@ with center:
                 st.pyplot(plt.gcf())
                 plt.close()
 
-            st.divider()
 
             # =========================
             # HYBRID EXPLANATION
@@ -419,6 +418,53 @@ with center:
                 "YOLO and U-Net are trained independently and combined at inference time, "
                 "allowing YOLO to guide localization while U-Net performs fine-grained segmentation."
             )
+            st.divider()
+            direct_iou = [0.8077, 0.9067, 0.6733]
+            direct_dice = [0.8936, 0.9510, 0.8047]
+
+            transfer_iou = [0.7789, 0.8989, 0.6549]
+            transfer_dice = [0.8757, 0.9468, 0.7915]
+
+            st.markdown("### Dice & IoU (Hybrid Model)")
+
+            classes = ["glioma", "pituitary", "meningioma"]
+
+            hybrid_metrics_df = pd.DataFrame({
+                "Class": classes,
+
+                # Direct
+                "Direct Dice (Hybrid)": direct_dice,
+                "Direct IoU (Hybrid)": direct_iou,
+
+                # Transfer
+                "Transfer Dice (Hybrid)": transfer_dice,
+                "Transfer IoU (Hybrid)": transfer_iou,
+            })
+
+            st.dataframe(hybrid_metrics_df, width="stretch")
+
+            st.divider()
+            st.markdown("### Average Dice & IoU (Hybrid Model)")
+
+            avg_hybrid_df = pd.DataFrame({
+                "Metric": ["Average Dice", "Average IoU"],
+                "Direct Hybrid": [
+                    np.mean(direct_dice),
+                    np.mean(direct_iou),
+                ],
+                "Transfer Hybrid": [
+                    np.mean(transfer_dice),
+                    np.mean(transfer_iou),
+                ]
+            })
+
+            st.dataframe(avg_hybrid_df, width="stretch")
+            st.success(
+                "Compared to direct training, the transfer-based Hybrid model shows slightly lower Dice and IoU scores across all tumor classes. "
+                "However, the overall segmentation performance remains stable, with pituitary tumors consistently achieving the highest accuracy."
+            )
+
+
 
 
         elif algorithm == "Pure YOLO":
