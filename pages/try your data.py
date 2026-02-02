@@ -70,8 +70,8 @@ def load_hybrid_unet():
     model = Unet(
         encoder_name="resnet34",
         encoder_weights=None,
-        in_channels=1,
-        classes=len(CLASS_NAMES)
+        in_channels=3,
+        classes=1
     )
     model.load_state_dict(
         torch.load("models/best_unet_hybrid_transfer.pth", map_location=device)
