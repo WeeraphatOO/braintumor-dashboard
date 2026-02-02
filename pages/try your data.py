@@ -376,7 +376,7 @@ with center:
                         seg
                     )
 
-                hybrid_mask = (pred_mask > 0).astype(np.uint8)
+                hybrid_mask = (pred_mask > 0.2).astype(np.uint8)
 
                 # =========================
                 # COLOR OVERLAY (YOLO CLASS)
