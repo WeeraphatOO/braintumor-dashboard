@@ -26,12 +26,12 @@ with center:
     st.markdown("2. Hybrid Model (YOLO detection with U-Net Segmentation)")
     st.markdown("3. YOLO Segmentation (Real-time Instance Segmentation Model)")
 
-    tab_accuracy, tab_dataset = st.tabs(["Accuracy", "Dataset"])
+    tab_accuracy, tab_architecture, tab_dataset = st.tabs(["Accuracy", "Model Architecture", "Dataset"])
 
     with tab_accuracy:
         algorithm = st.selectbox(
             "Choose Your Algorithm",
-            ["Choose option", "Pure U-Net", "Hybrid Model (YOLO + U-Net)", "Pure YOLO"]
+            ["Pure U-Net", "Hybrid Model (YOLO + U-Net)", "Pure YOLO"]
         )
 
         if algorithm == "Pure U-Net":
@@ -681,3 +681,173 @@ with center:
         st.write("- No Tumor")
         st.write("Image Size: 224 x 224")
         st.write("Split: Train / Test")
+    with tab_architecture:
+
+        algorithm = st.selectbox(
+            "Choose Your Algorithm",
+            [
+                "U-Net Architecture",
+                "Hybrid Architecture",
+                "YOLO Segmentation Architecture"
+            ]
+        )
+
+        # =====================================================
+        # U-NET ARCHITECTURE
+        # =====================================================
+        if algorithm == "U-Net Architecture":
+            st.subheader("ResUNet Architecture")
+
+            st.image(
+                "assets/resunet.png",
+                caption="ResUNet Architecture",
+                width= "stretch"
+            )
+
+            st.markdown("""
+            ResUNet is an improved version of U-Net that integrates residual learning 
+            into the encoder–decoder segmentation framework.
+
+            It preserves the classical U-shaped structure while replacing standard 
+            convolution blocks with residual blocks to improve training stability 
+            and gradient propagation.
+            """)
+            st.divider()
+            st.markdown("### Encoder (Feature Extraction)")
+
+            st.markdown("""
+            The encoder gradually reduces spatial resolution while increasing 
+            feature depth to extract high-level representations.
+
+            Each encoder stage consists of:
+            - Residual Block (Conv → BN → ReLU → Conv → BN + Skip Connection)
+            - Downsampling (MaxPooling or Strided Convolution)
+
+            Purpose:
+            - Capture spatial features
+            - Extract texture and tumor patterns
+            - Learn hierarchical representations
+            """)
+            st.divider()
+            st.markdown("### Bottleneck (Neck / Bridge Layer)")
+
+            st.markdown("""
+            The bottleneck is the deepest part of the network.
+
+            It contains a residual block without downsampling.
+
+            Purpose:
+            - Capture global context
+            - Combine spatial and semantic information
+            - Learn abstract tumor representation
+            """)
+            st.divider()
+            st.markdown("### Decoder (Reconstruction Path)")
+
+            st.markdown("""
+            The decoder gradually restores spatial resolution.
+
+            Each decoder stage consists of:
+            - Upsampling (Transpose Convolution or Bilinear Upsample)
+            - Concatenation with corresponding encoder features (Skip Connection)
+            - Residual Block
+
+            Purpose:
+            - Recover spatial resolution
+            - Refine segmentation boundaries
+            - Combine low-level and high-level features
+            """)
+
+            st.divider()
+            st.markdown("### What is Skip Connections?")
+
+            st.markdown("""
+            Skip connections transfer feature maps from the encoder 
+            directly to the decoder at the same spatial level.
+
+            Purpose:
+            - Preserve fine-grained details
+            - Improve boundary accuracy
+            - Prevent information loss during downsampling
+            """)
+
+
+        # =====================================================
+        # HYBRID ARCHITECTURE
+        # =====================================================
+        elif algorithm == "Hybrid Architecture":
+
+            st.subheader("Hybrid Model Architecture (YOLO + U-Net)")
+
+            st.markdown("""
+            The Hybrid model combines YOLO for detection & classification
+            and U-Net for fine-grained segmentation.
+            """)
+
+            st.markdown("### Step 1: YOLO Detection")
+            st.markdown("""
+            - Backbone (CBS, C3K2 blocks)
+            - Neck (PAN feature fusion)
+            - Detection Head (CV2 & CV3)
+            - Output: Bounding boxes + Class labels
+            """)
+
+            st.markdown("### Step 2: ROI Cropping")
+            st.markdown("""
+            - Detected tumor region is cropped
+            - Passed to U-Net
+            """)
+
+            st.markdown("### Step 3: U-Net Segmentation")
+            st.markdown("""
+            - Encoder–Decoder structure
+            - Skip connections
+            - Pixel-level mask prediction
+            """)
+
+            st.success(
+                "Hybrid model improves spatial segmentation while keeping YOLO detection performance."
+            )
+
+
+        # =====================================================
+        # YOLO SEGMENTATION ARCHITECTURE
+        # =====================================================
+        elif algorithm == "YOLO Segmentation Architecture":
+
+            st.subheader("YOLO Segmentation Architecture")
+
+            st.markdown("""
+            YOLO Segmentation is a single-stage model that performs 
+            object detection and instance segmentation simultaneously.
+            """)
+
+            st.markdown("### Backbone")
+            st.markdown("""
+            - CBS (Conv + BatchNorm + SiLU)
+            - C3K2 blocks
+            - SPPF layer
+            """)
+
+            st.markdown("### Neck (PAN/FPN)")
+            st.markdown("""
+            - Feature pyramid fusion
+            - Multi-scale feature maps (P3, P4, P5)
+            """)
+
+            st.markdown("### Detection Head")
+            st.markdown("""
+            - CV2 branch → Bounding box regression
+            - CV3 branch → Classification
+            """)
+
+            st.markdown("### Segmentation Head")
+            st.markdown("""
+            - Prototype Masks (K shared masks)
+            - Mask Coefficients (per object)
+            - Final Mask = Σ (Prototype × Coefficient)
+            """)
+
+            st.success(
+                "YOLO Segmentation provides real-time instance segmentation with bounding boxes and pixel-level masks."
+            )
