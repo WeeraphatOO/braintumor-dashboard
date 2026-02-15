@@ -1046,13 +1046,13 @@ with center:
             M_i(x, y) = \sigma \left( \sum_{k=1}^{K} c_{ik} \cdot P_k(x, y) \right)
             """)
 
-            st.markdown("""
+            st.markdown(r"""
             Where:
 
-            - M_i(x, y) = final mask for object i  
-            - c_{ik} = mask coefficient  
-            - P_k(x, y) = prototype mask  
-            - σ = sigmoid activation  
+            - $M_i(x, y)$ = final mask for object $i$  
+            - $c_{ik}$ = mask coefficient  
+            - $P_k(x, y)$ = prototype mask  
+            - $\sigma$ = sigmoid activation  
             """)
 
             st.markdown("""
