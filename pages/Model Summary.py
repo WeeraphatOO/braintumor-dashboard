@@ -696,7 +696,7 @@ with center:
         # U-NET ARCHITECTURE
         # =====================================================
         if algorithm == "U-Net Architecture":
-            st.subheader("ResUNet Architecture")
+            st.title("ResUNet Architecture")
 
             st.image(
                 "assets/resunet.png",
@@ -770,6 +770,7 @@ with center:
             - Improve boundary accuracy
             - Prevent information loss during downsampling
             """)
+            st.divider()
 
 
         # =====================================================
@@ -777,77 +778,289 @@ with center:
         # =====================================================
         elif algorithm == "Hybrid Architecture":
 
-            st.subheader("Hybrid Model Architecture (YOLO + U-Net)")
-
+            st.title("Hybrid Architecture: YOLO Detection + U-Net Segmentation")
             st.markdown("""
-            The Hybrid model combines YOLO for detection & classification
-            and U-Net for fine-grained segmentation.
+            This hybrid model combines fast object detection (YOLO) with precise segmentation (U-Net).
+            The key idea is Region of Interest (ROI) cropping before segmentation.
             """)
 
-            st.markdown("### Step 1: YOLO Detection")
-            st.markdown("""
-            - Backbone (CBS, C3K2 blocks)
-            - Neck (PAN feature fusion)
-            - Detection Head (CV2 & CV3)
-            - Output: Bounding boxes + Class labels
-            """)
-
-            st.markdown("### Step 2: ROI Cropping")
-            st.markdown("""
-            - Detected tumor region is cropped
-            - Passed to U-Net
-            """)
-
-            st.markdown("### Step 3: U-Net Segmentation")
-            st.markdown("""
-            - Encoder–Decoder structure
-            - Skip connections
-            - Pixel-level mask prediction
-            """)
-
-            st.success(
-                "Hybrid model improves spatial segmentation while keeping YOLO detection performance."
+            # =========================================================
+            # STAGE 1 - YOLO DETECTION
+            # =========================================================
+            st.markdown("### Stage 1 - YOLO Detection")
+            st.image(
+                "assets/yolo_detect.png",
+                caption="YOLO Detection Model Architecture",
+                width= "stretch"
             )
 
+            st.markdown("""
+            The full input image is first passed into a YOLO detection model.
+            Each predicted bounding box defines a potential Region of Interest (ROI).            
+            """)
+
+            st.markdown("""
+            YOLO predicts:
+
+            - Bounding box coordinates (x, y, w, h)
+            - Object confidence
+            - Class probability
+            """)
+
+
+            st.markdown("""
+            Each predicted bounding box defines a potential Region of Interest (ROI).
+            """)
+
+            st.divider()
+
+            # =========================================================
+            # STAGE 2 - ROI CROP (CORE PROCESS)
+            # =========================================================
+            st.markdown("### Stage 2 - ROI Crop")
+
+            st.markdown("""
+            Instead of segmenting the whole image, we crop only detected regions.
+            This reduces background noise and improves segmentation precision by making Unet focus only tumor area.
+            """)
+
+            st.image(
+                "assets/crop_roi.png",
+                caption="ROI Cropping Process",
+                width= "stretch"
+            )
+
+            st.divider()
+
+            # =========================================================
+            # STAGE 3 - U-NET SEGMENTATION
+            # =========================================================
+            st.markdown("### Stage 3 - U-Net Segmentation")
+            st.image(
+                "assets/resunet.png",
+                caption="ResUNet Architecture",
+                width= "stretch"
+            )
+            st.markdown("""
+            Each resized ROI is independently passed into U-Net.
+            """)
+
+            st.divider()
+
+            # =========================================================
+            # STAGE 4 - RESTORE TO ORIGINAL IMAGE
+            # =========================================================
+            st.markdown("### Stage 4 - Restore Mask to Original Image")
+
+            st.markdown("""
+            The predicted ROI mask must be mapped back to original image coordinates.
+            """)
+
+            st.markdown("""
+            Repeat for all detected objects.
+            """)
+
+            st.markdown("""
+            Final output contains:
+
+            - Bounding boxes (from YOLO)
+            - Segmentation masks (from U-Net)
+            """)
+
+            st.divider()
 
         # =====================================================
         # YOLO SEGMENTATION ARCHITECTURE
         # =====================================================
         elif algorithm == "YOLO Segmentation Architecture":
-
-            st.subheader("YOLO Segmentation Architecture")
-
-            st.markdown("""
-            YOLO Segmentation is a single-stage model that performs 
-            object detection and instance segmentation simultaneously.
-            """)
-
-            st.markdown("### Backbone")
-            st.markdown("""
-            - CBS (Conv + BatchNorm + SiLU)
-            - C3K2 blocks
-            - SPPF layer
-            """)
-
-            st.markdown("### Neck (PAN/FPN)")
-            st.markdown("""
-            - Feature pyramid fusion
-            - Multi-scale feature maps (P3, P4, P5)
-            """)
-
-            st.markdown("### Detection Head")
-            st.markdown("""
-            - CV2 branch → Bounding box regression
-            - CV3 branch → Classification
-            """)
-
-            st.markdown("### Segmentation Head")
-            st.markdown("""
-            - Prototype Masks (K shared masks)
-            - Mask Coefficients (per object)
-            - Final Mask = Σ (Prototype × Coefficient)
-            """)
-
-            st.success(
-                "YOLO Segmentation provides real-time instance segmentation with bounding boxes and pixel-level masks."
+            st.title("YOLO Segmentation Architecture (YOLO-Seg)")
+            st.image(
+                "assets/yolo_segment.png",
+                caption="YOLOv11 Segmentation Model Architecture",
+                width= "stretch"
             )
+            st.markdown("Model architecture explanation divided into Backbone, Neck, Detection Head, and Segmentation Head.")
+
+            # =========================================================
+            # BACKBONE
+            # =========================================================
+            st.markdown("### Backbone - Feature Extraction")
+
+            st.markdown("""
+            The backbone extracts hierarchical features from the 640×640 input image.
+            It progressively reduces spatial resolution while increasing channel depth.
+            """)
+
+            st.subheader("CBS Block")
+            st.markdown("""
+            **Structure:** Conv → BatchNorm → SiLU  
+            **Purpose:** Basic feature extraction block used throughout the network.
+            """)
+
+            st.subheader("C3K2 Block")
+            st.markdown("""
+            **Structure:** CBS → C3K (N times) → Concat → CBS  
+            **Purpose:** Efficient deep feature extraction using CSP-style connections.
+            """)
+
+            st.subheader("C3K Block")
+            st.markdown("""
+            **Structure:** CBS → Bottleneck (N times) → Concat → CBS  
+            **Purpose:** Enhances representation capacity while maintaining efficiency.
+            """)
+
+            st.subheader("Bottleneck")
+            st.markdown("""
+            **Structure:** CBS → CBS + Residual Shortcut  
+            **Purpose:** Enables residual learning and stabilizes deep training.
+            """)
+
+            st.subheader("SPPF (Spatial Pyramid Pooling Fast)")
+            st.markdown("""
+            **Structure:** CBS → MaxPool (multiple times) → Concat → CBS  
+            **Purpose:** Expands receptive field and captures multi-scale context.
+            """)
+
+            st.subheader("C2PSA (Cross Partial Self Attention)")
+            st.markdown("""
+            **Structure:** CBS → PSA (N times) → Concat → CBS  
+            **Purpose:** Adds attention mechanism to focus on important regions.
+            """)
+
+            st.divider()
+
+            # =========================================================
+            # NECK
+            # =========================================================
+            st.markdown("### Neck - Multi-scale Feature Fusion")
+
+            st.markdown("""
+            The neck combines features from different scales using an FPN/PAN-like structure.
+            It helps detect both small and large objects.
+            """)
+
+            st.subheader("Upsample")
+            st.markdown("Increases spatial resolution to recover fine-grained details.")
+
+            st.subheader("Concat")
+            st.markdown("Merges shallow and deep features to improve multi-scale representation.")
+
+            st.subheader("C3K2 + CBS in Neck")
+            st.markdown("Used after feature concatenation to refine fused features.")
+
+            st.divider()
+
+            # =========================================================
+            # DETECTION HEAD
+            # =========================================================
+            st.header("Detection Head - Bounding Box & Classification")
+
+            st.markdown("""
+            Three detection heads are used for multi-scale object prediction.
+            Each head predicts bounding boxes and class probabilities.
+            """)
+
+            st.subheader("Box Branch")
+            st.markdown("""
+            **Structure:** CBS → CBS → Conv2D  
+            **Output:** Bounding box coordinates (x, y, w, h)
+            """)
+
+            st.subheader("Classification Branch")
+            st.markdown("""
+            **Structure:** DWConv + CBS → DWConv + CBS → Conv2D  
+            **Output:** Class probabilities
+            """)
+
+            st.subheader("Detection Output")
+            st.markdown("Outputs from all scales are concatenated to produce final predictions.")
+
+            st.divider()
+
+            # =========================================================
+            # SEGMENTATION HEAD
+            # =========================================================
+            st.header("Segmentation Head - Instance Mask Generation")
+
+            st.markdown("""
+            YOLO-Seg extends object detection by generating pixel-level instance masks.
+            The segmentation head consists of Prototype Mask generation and Mask Coefficients.
+            """)
+
+            # ---------------------------------------------------------
+            # PROTOTYPE MASK (DETAILED)
+            # ---------------------------------------------------------
+            st.subheader("Prototype Mask")
+
+            st.markdown("""
+            The Prototype Mask branch generates **K shared mask bases** (prototypes).
+
+            Instead of predicting a full-resolution mask for each object, the model:
+
+            1. Generates a fixed set of global mask prototypes.
+            2. Combines them differently for each detected object.
+            """)
+
+            st.markdown("### Prototype Masks Benefit?")
+
+            st.markdown("""
+            Directly predicting one mask per object would be computationally expensive.
+
+            Prototype-based design:
+
+            - Reduces memory usage  
+            - Speeds up inference  
+            - Enables real-time segmentation  
+            - Shares spatial information across objects  
+            """)
+
+            st.divider()
+
+            # ---------------------------------------------------------
+            # MASK COEFFICIENT
+            # ---------------------------------------------------------
+            st.subheader("Mask Coefficient")
+
+            st.markdown("""
+            For each detected object, the detection head predicts K coefficients:
+
+            Coefficient shape per object:
+            """)
+
+            st.latex(r"""
+            c_i = (c_{i1}, c_{i2}, ..., c_{iK})
+            """)
+
+            st.markdown("""
+            These coefficients determine how much each prototype contributes to the final mask.
+            """)
+
+            st.divider()
+
+            # ---------------------------------------------------------
+            # MASK CALCULATION
+            # ---------------------------------------------------------
+            st.subheader("Mask Calculation")
+
+            st.latex(r"""
+            M_i(x, y) = \sigma \left( \sum_{k=1}^{K} c_{ik} \cdot P_k(x, y) \right)
+            """)
+
+            st.markdown("""
+            Where:
+
+            - M_i(x, y) = final mask for object i  
+            - c_{ik} = mask coefficient  
+            - P_k(x, y) = prototype mask  
+            - σ = sigmoid activation  
+            """)
+
+            st.markdown("""
+            After this step:
+
+            - The mask is resized to the original image size.
+            - It is cropped using the predicted bounding box.
+            - Thresholding is applied to obtain the binary segmentation mask.
+            """)
+
+            st.divider()
