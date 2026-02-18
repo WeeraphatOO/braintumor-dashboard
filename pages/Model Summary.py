@@ -679,8 +679,7 @@ with center:
         st.write("- Meningioma")
         st.write("- Pituitary")
         st.write("- No Tumor")
-        st.write("Image Size: 224 x 224")
-        st.write("Split: Train / Test")
+        st.link_button('Dataset Link','https://www.kaggle.com/datasets/briscdataset/brisc2025/data')
     with tab_architecture:
 
         algorithm = st.selectbox(

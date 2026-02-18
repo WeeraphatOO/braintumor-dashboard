@@ -40,12 +40,12 @@ This dashboard is designed to support **analysis, comparison, and interpretation
 """)
 st.divider()
 st.markdown("""
-### Developed By
+Developed By
 **Weeraphat Oun-Ob**  
 **วีรภัทร์ อุ่นอบ**       
 Bachelor of Computer Engineering  
 
-### Project Advisor
+Project Advisor
 **Asst. Prof. Dr. Thanawin Rakthanmanon**  
 **ผู้ช่วยศาสตราจารย์ ดร.ธนาวินท์ รักธรรมานนท์**
 Department of Computer Engineering  
