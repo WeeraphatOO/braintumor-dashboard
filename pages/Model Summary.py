@@ -673,7 +673,7 @@ with center:
 
     with tab_dataset:
         st.write("Dataset Information")
-        st.write("Brain MRI Images")
+        st.write("BRISC 2025: Annotated Dataset for Brain Tumor Image Segmentation and Classification")
         st.write("Classes:")
         st.write("- Glioma")
         st.write("- Meningioma")
